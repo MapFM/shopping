@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper   
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.lyu.shopping.sysmanage.mapper.ProductMapper">
+
+	<!-- 商品表的所有字段 -->
+	<sql id="all_product_columns">
+    	product_id, product_name, category1_id, category2_id,
+    	purchase_price, sale_price, inventory, hits, img_src,
+    	description, gmt_create, gmt_modified, is_show, is_deleted
+  	</sql>
+  	
+  	<!-- 商品表的所有字段的别名 -->
+	<sql id="all_product_columns_alias">
+    	A.product_id, A.product_name, A.category1_id, A.category2_id,
+    	A.purchase_price, A.sale_price, A.inventory, A.hits, A.img_src,
+    	A.description, A.gmt_create, A.gmt_modified, A.is_show, A.is_deleted
+  	</sql>
+	
+	<!-- 封装了一些商品的查询条件 -->
+	<sql id="query_product_sql">
+		<if test="productId != null">
+			AND product_id = #{productId}
+		</if>
+		<if test="productName != null">
+			AND product_name = #{productName}
+		</if>
+		<if test="category1Id != null">
+			AND category1_id = #{category1Id}
+		</if>
+		<if test="showFlag != null">
+			AND is_show = #{showFlag}
+		</if>
+	</sql>
+	
+	<!-- 商品表与对应的pojo类之间的映射 -->
+	<resultMap type="productDTO" id="productResultMap">
+		<id property="productId" column="product_id" />
+		<result property="productName" column="product_name" />
+		<result property="category1Id" column="category1_id" />
+		<result property="category2Id" column="category2_id" />
+		<result property="purchasePrice" column="purchase_price" />
+		<result property="salePrice" column="sale_price" />
+		<result property="inventory" column="inventory" />
+		<result property="hits" column="hits" />
+		<result property="imgSrc" column="img_src" />
+		<result property="description" column="description" />
+		<result property="gmtCreate" column="gmt_create" />
+		<result property="gmtModified" column="gmt_modified" />
+		<result property="showFlag" column="is_show" />
+		<result property="delFlag" column="is_deleted" />
+	</resultMap>
+	
+	<!-- 根据商品的id查询出它的详细信息 -->
+	<select id="getProductByProductId" parameterType="long" resultMap="productResultMap">
+		SELECT <include refid="all_product_columns" />
+		FROM shopping_product
+		WHERE product_id = #{productId} AND is_deleted = 0
+	</select>
+	
+	<!-- 根据商品的id获取该商品的点击量 -->
+	<select id="getProductHitsByPId" parameterType="long" resultType="integer">
+	   SELECT hits FROM shopping_product
+	   WHERE product_id = #{productId}
+	</select>
+	
+	<!-- 统计数据库中存在于集合中商品的个数 -->
+	<select id="countProductInList" parameterType="list" resultType="integer">
+		SELECT COUNT(1) FROM shopping_product
+		<where>
+			<foreach collection="list" open="AND product_id IN ("
+				item="id" close=")" separator=",">
+				#{id}
+			</foreach>
+			<if test="1 == 1">
+				AND is_deleted = 0
+			</if>
+		</where>
+	</select>
+	
+	<!-- 查询出所有的商品的名称 -->
+	<select id="listAllProductName" resultType="string">
+		SELECT product_name
+		FROM shopping_product
+		WHERE is_deleted = 0
+	</select>
+	
+	<!-- 查询商品的列表 -->
+	<select id="listProduct" parameterType="product" resultMap="productResultMap">
+		SELECT <include refid="all_product_columns_alias" />,
+		B.category1_name, C.category2_name
+		FROM shopping_product A, shopping_category1 B, shopping_category2 C
+		<where>
+			AND A.category1_id = B.category1_id
+			AND A.category2_id = C.category2_id
+			AND A.is_deleted = 0
+			<if test="productName != null">
+				AND product_name = #{productName}
+			</if>
+			<if test="category1Id != null">
+				AND A.category1_id = #{category1Id}
+			</if>
+			<if test="category2Id != null">
+				AND A.category2_id = #{category2Id}
+			</if>
+		</where>
+		ORDER BY A.product_id
+	</select>
+	
+	<!-- 上架或者下架商品,参数为1就是上架，参数为0就是下架 -->
+	<update id="updateProductStatus">
+		UPDATE shopping_product SET is_show = #{param2}
+		WHERE product_id = #{param1}
+	</update>
+	
+	<!-- 添加商品 -->
+	<insert id="saveProduct" parameterType="product">
+		INSERT INTO shopping_product(product_name, category1_id, category2_id,
+		purchase_price, sale_price, inventory, hits, img_src, description ,
+		gmt_create, gmt_modified ,is_show, is_deleted)
+		VALUES(#{productName}, #{category1Id}, #{category2Id}, #{purchasePrice},
+		#{salePrice}, #{inventory}, #{hits}, #{imgSrc}, #{description},
+		#{gmtCreate}, #{gmtModified}, #{showFlag}, #{delFlag})
+	</insert>
+	
+	<!-- 修改商品 -->
+	<update id="updateProduct" parameterType="product">
+		UPDATE shopping_product
+		<set>
+			<if test="productName != null">
+				product_name = #{productName},
+			</if>
+			<if test="category2Id != null">
+				category2_id = #{category2Id},
+			</if>
+			<if test="category1Id != null">
+				category1_id = #{category1Id},
+			</if>
+			<if test="purchasePrice != null">
+				purchase_price = #{purchasePrice},
+			</if>
+			<if test="salePrice != null">
+				sale_price = #{salePrice},
+			</if>
+			<if test="inventory != null">
+				inventory = #{inventory},
+			</if>
+			<if test="hits != null">
+				hits = #{hits},
+			</if>
+			<if test="showFlag != null">
+				is_show = #{showFlag},
+			</if>
+			<if test="description != null">
+				description = #{description},
+			</if>
+			<if test="imgSrc != null">
+				img_src = #{imgSrc},
+			</if>
+			<if test="gmtModified != null">
+				gmt_modified = #{gmtModified},
+			</if>
+		</set>
+		<where>
+			<if test="productId != null">
+				AND product_id = #{productId} AND is_deleted = 0
+			</if>
+		</where>
+	</update>
+	
+	<!-- 删除商品（逻辑删除） -->
+	<update id="removeProduct" parameterType="long">
+		UPDATE shopping_product
+		SET is_deleted = 1
+		WHERE product_id = #{productId}
+	</update>
+	
+	<!-- 批量删除集合中的商品 -->
+	<update id="removeProductBatch" parameterType="list">
+		UPDATE shopping_product SET is_deleted = 1
+		<where>
+			<foreach collection="list" open="AND product_id IN(" 
+				item="id" close=")" separator=",">
+				#{id}
+			</foreach>
+			<if test="1 == 1">
+				AND is_deleted = 0
+			</if>
+		</where>
+	</update>
+	
+</mapper>

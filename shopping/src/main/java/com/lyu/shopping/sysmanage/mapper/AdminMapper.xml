@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.lyu.shopping.sysmanage.mapper.AdminMapper">
+	<!-- 管理员表所有的字段（除去password字段） -->
+	<sql id="all_admin_columns">
+		id, login_name, admin_name, password, age, sex, email, mobile,
+		address, status, gmt_create, gmt_modified, is_deleted delFlag
+	</sql>
+
+	<!-- 将通用的sql查询条件抽取出来，成为sql片段给不同的方法用 -->
+	<sql id="query_admin_sql_where">
+		<if test="adminName != null">
+			AND admin_name LIKE '%${adminName}%'
+		</if>
+		<if test="loginName != null">
+			AND login_name = #{loginName}
+		</if>
+		<if test="password != null">
+			AND password = #{password}
+		</if>
+		<if test="1 == 1">
+			AND is_deleted = 0
+		</if>
+	</sql>
+	
+	<!-- 统计既存在于数据库中又存在于集合中的管理员数目 -->
+	<select id="countAdminInList" parameterType="list" resultType="int">
+		SELECT count(1) FROM shopping_sys_admin
+		<where>
+			<foreach collection="list" open="AND id IN (" item="id" 
+				separator="," close=")">#{id}</foreach>
+			<if test="1 == 1">
+				AND is_deleted = 0
+			</if>
+		</where>
+	</select>
+	
+	<!-- 统计所有管理员的数目(未删除的) -->
+	<select id="countAdmin" resultType="long">
+		SELECT COUNT(1) FROM shopping_sys_admin
+		WHERE is_deleted = 0
+	</select>
+	
+	<!-- 通过管理员id获取管理员的详细信息 -->
+	<select id="getAdminByAdminId" parameterType="long" resultType="admin">
+		SELECT <include refid="all_admin_columns" />
+		FROM shopping_sys_admin
+		WHERE id = #{adminId} AND is_deleted = 0
+	</select>
+	
+	<!-- 查询用户列表 -->
+	<select id="listAdmin" parameterType="admin" resultType="admin">
+		SELECT <include refid="all_admin_columns" />
+		FROM shopping_sys_admin
+		<where>
+			<include refid="query_admin_sql_where" />
+		</where>
+	</select>
+
+	<!-- 新增用户 -->
+	<insert id="saveAdmin" parameterType="admin">
+		INSERT INTO shopping_sys_admin(login_name, admin_name, age, sex, password, email,
+			mobile, address, status, gmt_create, gmt_modified, is_deleted)
+		VALUES(#{loginName}, #{adminName}, #{age}, #{sex}, #{password}, #{email},
+			#{mobile}, #{address}, #{status}, #{gmtCreate}, #{gmtModified}, #{delFlag})
+	</insert>
+	
+	<!-- 删除管理员，根据管理员id删除（逻辑删除）管理员 -->
+	<update id="removeAdmin" parameterType="long">
+		UPDATE shopping_sys_admin SET is_deleted = 1
+		WHERE id = #{adminId} AND is_deleted = 0
+	</update>
+	
+	<!-- 批量删除管理员 -->
+	<update id="removeAdminBatch" parameterType="list">
+		UPDATE shopping_sys_admin SET is_deleted = 1
+		<where>
+			<foreach collection="list" item="id" open="AND id in ("
+				separator="," close=")">#{id}</foreach>
+			<if test="1 == 1">
+				AND is_deleted = 0
+			</if>
+		</where>
+	</update>
+	
+	<!-- 修改管理员的信息（不包括密码） -->
+	<update id="updateAdmin" parameterType="admin">
+		UPDATE shopping_sys_admin
+		<set>
+			<if test = "loginName != null">
+				login_name = #{loginName},
+			</if>
+			<if test = "adminName != null">
+				admin_name = #{adminName},
+			</if>
+			<if test = "age != null">
+				age = #{age},
+			</if>
+			<if test = "sex != null">
+				sex = #{sex},
+			</if>
+			<if test = "email != null">
+				email = #{email},
+			</if>
+			<if test = "mobile != null">
+				mobile = #{mobile},
+			</if>
+			<if test = "address != null">
+				address = #{address},
+			</if>
+			<if test = "gmtModified != null">
+				gmt_modified = #{gmtModified},
+			</if>
+		</set>
+		WHERE id = #{id} AND is_deleted = 0
+	</update>
+	
+	<!-- 更新管理员的密码 -->
+	<update id="updatePassword">
+		UPDATE shopping_sys_admin SET password = #{param2}
+		WHERE id = #{param1} AND is_deleted = 0
+	</update>
+	
+</mapper>

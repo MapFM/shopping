@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper   
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="com.lyu.shopping.sysmanage.mapper.Category2Mapper">
+	<!-- 二级类目表的所有字段 -->
+	<sql id="all_category2_columns">
+    	category2_id, category2_name, category2_record, category1_id,
+    	gmt_create, gmt_modified, is_show, is_deleted
+  	</sql>
+  	
+  	<!-- 二级类目表的所有字段的别名 -->
+	<sql id="all_category2_columns_alias">
+    	A.category2_id, A.category2_name, A.category2_record, A.category1_id,
+    	A.gmt_create, A.gmt_modified, A.is_show, A.is_deleted
+  	</sql>
+	
+	<!-- 封装了一些二级类目的查询条件 -->
+	<sql id="query_category2_sql">
+		<if test="category2Id != null">
+			AND category2_id = #{category2Id}
+		</if>
+		<if test="category2Name != null">
+			AND category2_name = #{category2Name}
+		</if>
+		<if test="category2Record != null">
+			AND category2_record LIKE '%${category2Record}%'
+		</if>
+		<if test="category1Id != null">
+			AND category1_id = #{category1Id}
+		</if>
+		<if test="gmtCreate != null">
+			AND gmt_create = #{gmtCreate}
+		</if>
+		<if test="gmtModified != null">
+			AND gmt_modified = #{gmtModified}
+		</if>
+		<if test="showFlag != null">
+			AND is_show = #{showFlag}
+		</if>
+	</sql>
+	
+	<!-- 二级类目表与对应的pojo类之间的映射 -->
+	<resultMap type="category2DTO" id="category2ResultMap">
+		<id property="category2Id" column="category2_id" />
+		<result property="category2Name" column="category2_name" />
+		<result property="category2Record" column="category2_record" />
+		<result property="category1Id" column="category1_id" />
+		<result property="category1Name" column="category1_name" />
+		<result property="gmtCreate" column="gmt_create" />
+		<result property="gmtModified" column="gmt_modified" />
+		<result property="showFlag" column="is_show" />
+		<result property="delFlag" column="is_deleted" />
+	</resultMap>
+	
+	<!-- 根据二级类目的id查询出它的详细信息 -->
+	<select id="getCategory2ById" parameterType="long" resultMap="category2ResultMap">
+		SELECT <include refid="all_category2_columns" />
+		FROM shopping_category2
+		WHERE category2_id = #{category2Id} AND is_deleted = 0
+	</select>
+	
+	<!-- 统计数据库中存在于集合中二级类目的个数 -->
+	<select id="countCategory2InList" parameterType="list" resultType="integer">
+		SELECT COUNT(1) FROM shopping_category2
+		<where>
+			<foreach collection="list" open="AND category2_id IN ("
+				item="id" close=")" separator=",">
+				#{id}
+			</foreach>
+			<if test="1 == 1">
+				AND is_deleted = 0
+			</if>
+		</where>
+	</select>
+	
+	<!-- 测试所属一级类目为category1Id的二级类目的数量 -->
+	<select id="countCategory2UnderCategory1" parameterType="long" resultType="integer">
+		SELECT COUNT(*) FROM shopping_category2
+		WHERE category1_id = #{category1Id} AND is_deleted = 0;
+	</select>
+	
+	<!-- 查询出所有的二级类目的名称 -->
+	<select id="listAllCategory2Name" resultType="string">
+		SELECT category2_name
+		FROM shopping_category2
+		WHERE is_deleted = 0
+	</select>
+	
+	<!-- 查询二级类目的列表 -->
+	<select id="listCategory2" parameterType="category2" resultMap="category2ResultMap">
+		SELECT <include refid="all_category2_columns_alias" />, B.category1_name
+		FROM shopping_category1 B, shopping_category2 A
+		<where>
+			B.category1_id = A.category1_id
+			AND A.is_deleted = 0
+			<if test="category2Id != null">
+				AND category2_id = #{category2Id}
+			</if>
+			<if test="category2Name != null">
+				AND category2_name = #{category2Name}
+			</if>
+			<if test="category2Record != null">
+				AND category2_record LIKE '%${category2Record}%'
+			</if>
+			<if test="category1Id != null">
+				AND A.category1_id = #{category1Id}
+			</if>
+			<if test="gmtCreate != null">
+				AND gmt_create = #{gmtCreate}
+			</if>
+			<if test="gmtModified != null">
+				AND gmt_modified = #{gmtModified}
+			</if>
+			<if test="showFlag != null">
+				AND is_show = #{showFlag}
+			</if>
+		</where>
+		ORDER BY A.category2_id
+	</select>
+	
+	<!-- 显示或者隐藏二级类目,参数为1就是显示，参数为0就是隐藏 -->
+	<update id="updateShowFlag">
+		UPDATE shopping_category2 SET is_show = #{param2}
+		WHERE category2_id = #{param1} AND is_deleted = 0
+	</update>
+	
+	<!-- 添加二级类目 -->
+	<insert id="saveCategory2" parameterType="category2">
+		INSERT INTO shopping_category2(category2_name, category2_record,
+			category1_id, gmt_create, gmt_modified, is_show, is_deleted)
+		VALUES(#{category2Name}, #{category2Record}, #{category1Id},
+			#{gmtCreate}, #{gmtModified}, #{showFlag}, #{delFlag})
+	</insert>
+	
+	<!-- 修改二级类目 -->
+	<update id="updateCategory2" parameterType="category2">
+		UPDATE shopping_category2
+		<set>
+			<if test="category2Name != null">
+				category2_name = #{category2Name},
+			</if>
+			<if test="category2Record != null">
+				category2_record = #{category2Record},
+			</if>
+			<if test="category1Id != null">
+				category1_id = #{category1Id},
+			</if>
+			<if test="showFlag != null">
+				is_show = #{showFlag},
+			</if>
+			<if test="gmtModified != null">
+				gmt_modified = #{gmtModified},
+			</if>
+		</set>
+		<where>
+			<if test="category2Id != null">
+				AND category2_id = #{category2Id}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 删除二级类目（逻辑删除） -->
+	<update id="removeCategory2" parameterType="long">
+		UPDATE shopping_category2
+		SET is_deleted = 1
+		WHERE category2_id = #{category2Id}
+	</update>
+	
+	<!-- 批量删除集合中的二级类目 -->
+	<update id="removeCategory2Batch" parameterType="list">
+		UPDATE shopping_category2 SET is_deleted = 1
+		<where>
+			<foreach collection="list" open="AND category2_id IN(" 
+				item="id" close=")" separator=",">
+				#{id}
+			</foreach>
+			<if test="1 == 1">
+				AND is_deleted = 0
+			</if>
+		</where>
+	</update>
+	
+</mapper>
