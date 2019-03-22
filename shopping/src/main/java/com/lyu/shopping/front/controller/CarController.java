@@ -5,7 +5,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +14,6 @@ import com.lyu.shopping.front.entity.Cart;
 import com.lyu.shopping.front.entity.CartItem;
 import com.lyu.shopping.sysmanage.entity.Product;
 import com.lyu.shopping.sysmanage.service.ProductService;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * 类描述：用于处理对购物车的请求
